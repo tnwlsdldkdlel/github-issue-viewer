@@ -9,7 +9,17 @@
     "lint": "next lint",
     "perf:measure": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/report.html --view",
     "perf:json": "lighthouse http://localhost:3003 --output json --output-path ./docs/performance/report.json",
-    "perf:baseline": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/baseline-$(date +%Y-%m-%d).html"
+    "perf:baseline": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/baseline-$(date +%Y-%m-%d).html",
+    "perf:auto": "tsx scripts/performance-test.ts",
+    "perf:auto:initial": "tsx scripts/performance-test.ts initial-load",
+    "perf:auto:500": "tsx scripts/performance-test.ts load-500-issues",
+    "perf:auto:1000": "tsx scripts/performance-test.ts load-1000-issues",
+    "perf:auto:scroll": "tsx scripts/performance-test.ts scroll-performance",
+    "perf:devtools": "tsx scripts/performance-devtools.ts",
+    "perf:devtools:initial": "tsx scripts/performance-devtools.ts initial-load",
+    "perf:devtools:500": "tsx scripts/performance-devtools.ts load-500-issues",
+    "perf:devtools:1000": "tsx scripts/performance-devtools.ts load-1000-issues",
+    "perf:devtools:scroll": "tsx scripts/performance-devtools.ts scroll-performance"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.51.1",
@@ -21,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
+    "@types/puppeteer": "^5.4.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",
@@ -28,7 +39,10 @@
     "eslint-config-next": "^14.2.5",
     "lighthouse": "^13.0.1",
     "postcss": "^8.4.39",
+    "puppeteer": "^24.29.1",
     "tailwindcss": "^3.4.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.5.4"
   }
 }

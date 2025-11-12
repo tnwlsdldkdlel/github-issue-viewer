@@ -5,6 +5,7 @@
 ## 목차
 
 - [측정 방법](#측정-방법)
+- [측정 도구 가이드](#측정-도구-가이드)
 - [설정](#설정)
 - [측정 시나리오](#측정-시나리오)
 - [성능 측정 결과](#성능-측정-결과)
@@ -12,11 +13,23 @@
 
 ---
 
+## 측정 도구 가이드
+
+프로젝트에서 사용하는 성능 측정 도구에 대한 상세한 설명은 [measurement-tools.md](./measurement-tools.md)를 참고하세요.
+
+**간단 요약:**
+- **Lighthouse CLI**: 초기 페이지 로드 성능 측정 (Core Web Vitals)
+- **Chrome DevTools Performance (수동)**: 상세한 렌더링 성능 분석
+- **Lighthouse 자동화**: 초기 로드 성능의 자동화된 측정
+- **Chrome DevTools Performance 자동화** ⭐: 대량 데이터 로드 후 성능 차이의 자동화된 측정
+
+---
+
 ## 측정 방법
 
-### 1. Lighthouse CLI 사용 (추천)
+### 1. Lighthouse CLI 사용 (초기 로드만 측정)
 
-가장 간단하고 빠르게 성능을 측정할 수 있는 방법입니다.
+가장 간단하고 빠르게 초기 페이지 로드 성능을 측정할 수 있는 방법입니다.
 
 #### 설치
 
@@ -48,14 +61,150 @@ npm run perf:json
 
 결과가 `docs/performance/report.json`에 저장됩니다.
 
-### 2. Chrome DevTools Performance (상세 분석)
+**⚠️ 주의**: Lighthouse CLI는 초기 페이지 로드만 측정합니다. 사용자 상호작용("더 보기" 버튼 클릭 등)은 자동화 스크립트를 사용하세요.
+
+### 1-1. 자동화 스크립트 사용 (추천) ⭐
+
+Puppeteer를 사용하여 사용자 상호작용을 자동으로 시뮬레이션하고 Lighthouse로 측정합니다.
+
+#### 설치
+
+```bash
+npm install -D puppeteer tsx
+```
+
+#### 사용 가능한 시나리오
+
+1. **초기 로드 (100개 이슈)**
+   ```bash
+   npm run perf:auto:initial
+   ```
+
+2. **500개 이슈 로드 후 측정**
+   ```bash
+   npm run perf:auto:500
+   ```
+
+3. **1000개 이슈 로드 후 측정**
+   ```bash
+   npm run perf:auto:1000
+   ```
+
+4. **스크롤 성능 테스트 (500개 이슈 로드 후 스크롤)**
+   ```bash
+   npm run perf:auto:scroll
+   ```
+
+5. **모든 시나리오 실행**
+   ```bash
+   npm run perf:auto
+   ```
+
+#### 측정 실행
+
+1. 개발 서버 실행:
+   ```bash
+   npm run dev
+   ```
+
+2. 자동화 스크립트 실행:
+   ```bash
+   npm run perf:auto:500
+   ```
+
+3. 결과 확인:
+   - JSON 리포트가 `docs/performance/` 폴더에 저장됩니다
+   - 파일명 형식: `{시나리오명}-{날짜}.json`
+   - 예: `load-500-issues-2025-11-12.json`
+
+#### 자동화 스크립트의 장점
+
+- ✅ "더 보기" 버튼 클릭 자동화
+- ✅ 스크롤 동작 자동화
+- ✅ 대량 데이터 로드 후 측정 가능
+- ✅ 반복 측정 시 일관된 결과
+- ✅ 수동 작업 불필요
+
+**⚠️ 주의**: Lighthouse는 초기 페이지 로드만 측정하므로, "더 보기" 버튼 클릭 후 추가된 이슈는 측정에 포함되지 않습니다.
+
+### 1-2. Chrome DevTools Performance 자동화 스크립트 (추천) ⭐⭐
+
+Puppeteer의 Performance API를 사용하여 이미 로드된 페이지의 현재 상태를 측정합니다. Lighthouse와 달리 "더 보기" 버튼 클릭 후 추가된 이슈도 포함하여 측정할 수 있습니다.
+
+#### 설치
+
+```bash
+npm install -D puppeteer tsx
+```
+
+#### 사용 가능한 시나리오
+
+1. **초기 로드 (100개 이슈)**
+   ```bash
+   npm run perf:devtools:initial
+   ```
+
+2. **500개 이슈 로드 후 측정**
+   ```bash
+   npm run perf:devtools:500
+   ```
+
+3. **1000개 이슈 로드 후 측정**
+   ```bash
+   npm run perf:devtools:1000
+   ```
+
+4. **스크롤 성능 테스트 (500개 이슈 로드 후 스크롤)**
+   ```bash
+   npm run perf:devtools:scroll
+   ```
+
+5. **모든 시나리오 실행**
+   ```bash
+   npm run perf:devtools
+   ```
+
+#### 측정 실행
+
+1. 개발 서버 실행:
+   ```bash
+   npm run dev
+   ```
+
+2. 자동화 스크립트 실행:
+   ```bash
+   npm run perf:devtools:500
+   ```
+
+3. 결과 확인:
+   - JSON 리포트가 `docs/performance/` 폴더에 저장됩니다
+   - 파일명 형식: `devtools-{시나리오명}-{날짜}.json`
+   - 예: `devtools-load-500-issues-2025-11-12.json`
+
+#### 측정 항목
+
+- **DOM 노드 수**: 현재 페이지의 총 DOM 노드 수
+- **이슈 아이템 수**: 실제 렌더링된 이슈 아이템 수 (PR 필터링 후)
+- **메모리 사용량**: JavaScript Heap 사용량
+- **Performance API 메트릭**: FCP, DOM Content Loaded, Load Complete
+
+#### Chrome DevTools Performance 자동화 스크립트의 장점
+
+- ✅ "더 보기" 버튼 클릭 후 추가된 이슈도 측정 가능
+- ✅ 현재 페이지 상태를 직접 측정 (Lighthouse와 달리)
+- ✅ DOM 노드 수, 메모리 사용량 등 상세 메트릭 제공
+- ✅ 대량 데이터 로드 전후 비교 가능
+- ✅ 반복 측정 시 일관된 결과
+- ✅ 수동 작업 불필요
+
+### 2. Chrome DevTools Performance (수동 측정)
 
 렌더링 성능을 상세하게 분석할 때 사용합니다.
 
 #### 사용 방법
 
 1. 개발 서버 실행: `npm run dev`
-2. Chrome 브라우저에서 `http://localhost:3000` 접속
+2. Chrome 브라우저에서 `http://localhost:3003` 접속
 3. 개발자 도구 열기 (F12)
 4. **Performance** 탭 선택
 5. **Record** 버튼 클릭 (또는 Ctrl+E)
@@ -80,9 +229,19 @@ npm run perf:json
 ```json
 {
   "scripts": {
-    "perf:measure": "lighthouse http://localhost:3000 --output html --output-path ./docs/performance/report.html --view",
-    "perf:json": "lighthouse http://localhost:3000 --output json --output-path ./docs/performance/report.json",
-    "perf:baseline": "lighthouse http://localhost:3000 --output html --output-path ./docs/performance/baseline-$(date +%Y-%m-%d).html"
+    "perf:measure": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/report.html --view",
+    "perf:json": "lighthouse http://localhost:3003 --output json --output-path ./docs/performance/report.json",
+    "perf:baseline": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/baseline-$(date +%Y-%m-%d).html",
+    "perf:auto": "tsx scripts/performance-test.ts",
+    "perf:auto:initial": "tsx scripts/performance-test.ts initial-load",
+    "perf:auto:500": "tsx scripts/performance-test.ts load-500-issues",
+    "perf:auto:1000": "tsx scripts/performance-test.ts load-1000-issues",
+    "perf:auto:scroll": "tsx scripts/performance-test.ts scroll-performance",
+    "perf:devtools": "tsx scripts/performance-devtools.ts",
+    "perf:devtools:initial": "tsx scripts/performance-devtools.ts initial-load",
+    "perf:devtools:500": "tsx scripts/performance-devtools.ts load-500-issues",
+    "perf:devtools:1000": "tsx scripts/performance-devtools.ts load-1000-issues",
+    "perf:devtools:scroll": "tsx scripts/performance-devtools.ts scroll-performance"
   }
 }
 ```
