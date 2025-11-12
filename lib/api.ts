@@ -68,8 +68,11 @@ export async function fetchIssues(
   };
 
   // 환경 변수에서 토큰이 있으면 사용
-  if (process.env.NEXT_PUBLIC_GITHUB_TOKEN) {
-    headers.Authorization = `token ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`;
+  const token = process.env.NEXT_PUBLIC_GITHUB_TOKEN;
+  if (token) {
+    headers.Authorization = `token ${token}`;
+  } else {
+    console.warn("NEXT_PUBLIC_GITHUB_TOKEN이 설정되지 않았습니다. Rate limit이 60 req/h로 제한됩니다.");
   }
 
   const response = await fetch(
@@ -78,7 +81,14 @@ export async function fetchIssues(
   );
 
   if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status}`);
+    const errorText = await response.text().catch(() => "Unknown error");
+    console.error("GitHub API Error:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText,
+      url: `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
+    });
+    throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`);
   }
 
   const data = await response.json();

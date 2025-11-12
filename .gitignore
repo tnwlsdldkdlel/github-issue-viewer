@@ -36,3 +36,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# performance reports
+docs/performance/*.html
+docs/performance/*.json
+docs/performance/report.*
+docs/performance/baseline-*.html
+docs/performance/infinite-scroll-*.html
+docs/performance/virtual-scroll-*.html
+

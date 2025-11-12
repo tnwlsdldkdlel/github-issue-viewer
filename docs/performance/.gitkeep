@@ -1,0 +1,22 @@
+# 성능 측정 결과 파일 저장 디렉토리
+
+이 디렉토리는 성능 측정 결과 파일들을 저장합니다.
+
+## 파일 구조
+
+```
+docs/performance/
+├── README.md                    # 성능 측정 가이드
+├── baseline-2025-11-12.md      # 우선순위 1 기준선 측정 결과
+├── infinite-scroll-YYYY-MM-DD.md # 우선순위 2 측정 결과 (예정)
+├── virtual-scroll-YYYY-MM-DD.md # 우선순위 3 측정 결과 (예정)
+├── report.html                  # 최신 Lighthouse 리포트
+├── report.json                  # 최신 Lighthouse JSON 리포트
+└── baseline-*.html              # 기준선 HTML 리포트들
+```
+
+## 주의사항
+
+- HTML 리포트 파일은 용량이 클 수 있으므로 필요시만 커밋하세요.
+- JSON 리포트는 비교 분석에 유용합니다.
+
