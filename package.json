@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "rm -rf .next/cache && next dev -p 3003",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "clean:cache": "rm -rf .next/cache",
+    "clean:all": "rm -rf .next node_modules/.cache",
     "perf:measure": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/report.html --view",
     "perf:json": "lighthouse http://localhost:3003 --output json --output-path ./docs/performance/report.json",
     "perf:baseline": "lighthouse http://localhost:3003 --output html --output-path ./docs/performance/baseline-$(date +%Y-%m-%d).html",

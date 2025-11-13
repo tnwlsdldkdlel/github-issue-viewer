@@ -2,6 +2,8 @@
 
 import { useIssues, filterOutPullRequests } from "@/hooks/useIssues";
 import { GitHubIssue } from "@/lib/api";
+import { useEffect, useRef, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 function IssueItem({ issue }: { issue: GitHubIssue }) {
   const formatDate = (dateString: string) => {
@@ -71,6 +73,63 @@ function IssueItem({ issue }: { issue: GitHubIssue }) {
 export function IssueList() {
   const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useIssues();
+  
+  // 가상 스크롤 컨테이너 참조
+  const parentRef = useRef<HTMLDivElement>(null);
+  // fetchNextPage의 최신 참조를 유지하기 위한 ref
+  const fetchNextPageRef = useRef(fetchNextPage);
+
+  // fetchNextPage 참조 업데이트
+  useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+
+  // 모든 페이지의 이슈를 평탄화하고 PR 제외
+  const allIssues = useMemo(
+    () => data?.pages.flatMap((page) => filterOutPullRequests(page)) ?? [],
+    [data]
+  );
+
+  // 가상 스크롤 설정
+  const virtualizer = useVirtualizer({
+    count: allIssues.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 150, // 각 아이템의 예상 높이 (px)
+    overscan: 5, // 뷰포트 밖에 렌더링할 추가 아이템 수
+  });
+
+  // 가상화된 아이템이 마지막에 가까워지면 다음 페이지 로드
+  // 스크롤 이벤트를 직접 감지하여 불필요한 재실행 방지
+  useEffect(() => {
+    const scrollElement = parentRef.current;
+    if (!scrollElement) {
+      return;
+    }
+
+    const handleScroll = () => {
+      // 스크롤이 하단에 가까워졌는지 확인
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      const scrollBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // 하단 200px 이내에 도달하면 다음 페이지 로드
+      if (
+        scrollBottom < 200 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPageRef.current();
+      }
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // 초기 체크 (이미 스크롤이 하단에 있는 경우)
+    handleScroll();
+
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
     return (
@@ -93,9 +152,6 @@ export function IssueList() {
     );
   }
 
-  // 모든 페이지의 이슈를 평탄화하고 PR 제외
-  const allIssues = data?.pages.flatMap((page) => filterOutPullRequests(page)) ?? [];
-
   if (allIssues.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -106,23 +162,60 @@ export function IssueList() {
     );
   }
 
+  const virtualItems = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+
   return (
     <div className="w-full">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {allIssues.map((issue) => (
-            <IssueItem key={issue.id} issue={issue} />
-          ))}
+        {/* 가상 스크롤 컨테이너 */}
+        <div
+          ref={parentRef}
+          style={{
+            height: `600px`, // 컨테이너 높이 설정
+            overflow: 'auto',
+          }}
+        >
+          {/* 가상 스크롤 래퍼 (상대 위치) */}
+          <div
+            style={{
+              height: `${totalSize}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {/* 가상화된 아이템 렌더링 */}
+            {virtualItems.map((virtualItem) => {
+              const issue = allIssues[virtualItem.index];
+              if (!issue) {
+                return null;
+              }
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                >
+                  <IssueItem issue={issue} />
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {hasNextPage && (
+        
+        {/* 로딩 상태 표시 */}
+        {isFetchingNextPage && (
           <div className="p-4 text-center border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isFetchingNextPage ? "로딩 중..." : "더 보기"}
-            </button>
+            <div className="text-gray-500 dark:text-gray-400">
+              Loading more…
+            </div>
           </div>
         )}
       </div>
