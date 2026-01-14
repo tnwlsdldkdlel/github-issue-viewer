@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <Providers>{children}</Providers>
+        <Script src="https://test2-two-sand.vercel.app/geo-pixel.js" strategy="afterInteractive" />
       </body>
     </html>
   );
